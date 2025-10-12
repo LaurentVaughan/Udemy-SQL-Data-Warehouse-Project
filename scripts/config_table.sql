@@ -43,6 +43,14 @@ Notes:
     - This script is idempotent and safe to re-run
     - Use MERGE for upsert logic if config values may change
     - Consider adding metadata columns (e.g. last_updated, description) for auditability
+
+
+To show Table Contents, run the following:
+SELECT * FROM dbo.etl_config
+ORDER BY config_key;
+
+To drop table, highlight and run the following:
+DROP TABLE IF EXISTS dbo.etl_config;
 */
 
 -- Create config table if it doesn't exist
@@ -70,7 +78,7 @@ BEGIN
     INSERT INTO dbo.etl_config (config_key, config_value)
     VALUES (
         'base_path_crm',
-        'C:\Users\Laurent\Studies\sql-ultimate-course\Udemy-SQL-Data-Warehouse-Project\datasets\source_crm\'
+        'C:\Users\Laurent\Studies\sql-ultimate-course\Udemy-SQL-Data-Warehouse-Project\datasets\crm\'
     );
 END;
 GO
@@ -85,6 +93,6 @@ BEGIN
     INSERT INTO dbo.etl_config (config_key, config_value)
     VALUES (
         'base_path_erp',
-        'C:\Users\Laurent\Studies\sql-ultimate-course\Udemy-SQL-Data-Warehouse-Project\datasets\source_erp\'
+        'C:\Users\Laurent\Studies\sql-ultimate-course\Udemy-SQL-Data-Warehouse-Project\datasets\erp\'
     );
 END;
