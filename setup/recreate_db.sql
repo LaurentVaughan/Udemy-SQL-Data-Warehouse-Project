@@ -17,10 +17,13 @@ Steps:
 =======
 Usage:
 =======
-1. Ensure you have CONNECT privilege
+1. Check the current database:
+   SELECT current_database();
+
+2. Ensure you have CONNECT privilege
     GRANT CONNECT ON DATABASE sql_retail_analytics_warehouse TO postgres;
 
-2. Verify VS Code is on the same server as PGAdmin
+3. Verify VS Code is on the same server as PGAdmin
     SELECT
     inet_server_addr()   AS server_ip,
     current_setting('port') AS server_port,
@@ -29,12 +32,12 @@ Usage:
     current_user         AS current_user_name,
     current_setting('data_directory') AS data_dir;
 
-3. Confirm the database exists:
+4. Confirm the database exists:
     SELECT datname, datallowconn, datacl
     FROM pg_database
     WHERE datname = 'sql_retail_analytics_warehouse';
 
-4. (Execute from VS Code terminal or psql CLI):
+5. Execute from VS Code terminal or psql CLI:
     psql -d postgres -f setup/utils/recreate_db.sql
 */
 
