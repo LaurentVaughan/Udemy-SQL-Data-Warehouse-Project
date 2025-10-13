@@ -1,81 +1,66 @@
 /*
 =================================
-DDL Script: Create Bronze Tables
+DDL Script: Create Bronze Tables (Postgres)
 =================================
-Script Purpose:
-    This script creates tables in the 'bronze' schema, dropping existing tables if they already exist.
-	  Run this script to re-define the DDL structure of 'bronze' Tables
+Converted from T-SQL -> Postgres:
+ - Removed GO batches
+ - Replaced NVARCHAR -> VARCHAR, INT -> INTEGER, DATETIME -> TIMESTAMP
+ - Uses DROP TABLE IF EXISTS ... CASCADE and CREATE SCHEMA IF NOT EXISTS
 */
-IF OBJECT_ID('bronze.crm_customer_info', 'U') IS NOT NULL
-    DROP TABLE bronze.crm_customer_info;
-GO
+CREATE SCHEMA IF NOT EXISTS bronze;
+
+DROP TABLE IF EXISTS bronze.crm_customer_info CASCADE;
 CREATE TABLE bronze.crm_customer_info (
-    customer_id                  INT,
-    customer_key                 NVARCHAR(50),
-    customer_first_name          NVARCHAR(50),
-    customer_last_name           NVARCHAR(50),
-    customer_material_status     NVARCHAR(50),
-    customer_gender              NVARCHAR(50),
+    customer_id                  INTEGER,
+    customer_key                 VARCHAR(50),
+    customer_first_name          VARCHAR(50),
+    customer_last_name           VARCHAR(50),
+    customer_material_status     VARCHAR(50),
+    customer_gender              VARCHAR(50),
     customer_create_date         DATE
 );
-GO
 
-IF OBJECT_ID('bronze.crm_product_info', 'U') IS NOT NULL
-    DROP TABLE bronze.crm_product_info;
-GO
+DROP TABLE IF EXISTS bronze.crm_product_info CASCADE;
 CREATE TABLE bronze.crm_product_info (
-    product_id          INT,
-    product_key         NVARCHAR(50),
-    product_nm          NVARCHAR(50),
-    product_cost        INT,
-    product_line        NVARCHAR(50),
-    product_start_date  DATETIME,
-    product_end_date    DATETIME
+    product_id          INTEGER,
+    product_key         VARCHAR(50),
+    product_nm          VARCHAR(50),
+    product_cost        INTEGER,
+    product_line        VARCHAR(50),
+    product_start_date  TIMESTAMP,
+    product_end_date    TIMESTAMP
 );
-GO
 
-IF OBJECT_ID('bronze.crm_sales_details', 'U') IS NOT NULL
-    DROP TABLE bronze.crm_sales_details;
-GO
+DROP TABLE IF EXISTS bronze.crm_sales_details CASCADE;
 CREATE TABLE bronze.crm_sales_details (
-    sales_order_number  NVARCHAR(50),
-    sales_product_key   NVARCHAR(50),
-    sales_customer_id   INT,       
-    sales_order_date    DATETIME,
+    sales_order_number  VARCHAR(50),
+    sales_product_key   VARCHAR(50),
+    sales_customer_id   INTEGER,
+    sales_order_date    TIMESTAMP,
     sales_shipping_date DATE,
     sales_due_date      DATE,
-    sales_sales         INT,
-    sales_quantity      INT,
-    sales_price         INT,
+    sales_sales         INTEGER,
+    sales_quantity      INTEGER,
+    sales_price         INTEGER
 );
-GO
 
-IF OBJECT_ID('bronze.erp_local_a101', 'U') IS NOT NULL
-    DROP TABLE bronze.erp_local_a101;
-GO
+DROP TABLE IF EXISTS bronze.erp_local_a101 CASCADE;
 CREATE TABLE bronze.erp_local_a101 (
-		cid     NVARCHAR(50),
-		country NVARCHAR(50)
+    cid     VARCHAR(50),
+    country VARCHAR(50)
 );
-GO
 
-IF OBJECT_ID('bronze.erp_customer_az12', 'U') IS NOT NULL
-    DROP TABLE bronze.erp_customer_az12;
-GO
+DROP TABLE IF EXISTS bronze.erp_customer_az12 CASCADE;
 CREATE TABLE bronze.erp_customer_az12 (
-		cid           NVARCHAR(50),
-		date_of_birth DATE,
-		gender        NVARCHAR(50)
+    cid           VARCHAR(50),
+    date_of_birth DATE,
+    gender        VARCHAR(50)
 );
-GO
 
-IF OBJECT_ID('bronze.erp_px_category_g1v2', 'U') IS NOT NULL
-    DROP TABLE bronze.erp_px_category_g1v2;
-GO
+DROP TABLE IF EXISTS bronze.erp_px_cat_g1v2 CASCADE;
 CREATE TABLE bronze.erp_px_cat_g1v2 (
-    id           NVARCHAR(50),
-    category     NVARCHAR(50),
-    subcategory  NVARCHAR(50),
-    maintenance  NVARCHAR(50)
+    id           VARCHAR(50),
+    category     VARCHAR(50),
+    subcategory  VARCHAR(50),
+    maintenance  VARCHAR(50)
 );
-GO

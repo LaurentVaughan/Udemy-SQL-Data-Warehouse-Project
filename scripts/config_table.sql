@@ -1,98 +1,33 @@
 /*
 ==========================================
-Create Configuration Table for File Paths
+Create Configuration Table for File Paths (Postgres)
 ==========================================
-Purpose:
-    Initialize centralized configuration table for ETL file paths
-
-Overview:
-    - Creates dbo.etl_config table if it does not exist
-    - Inserts base path for CRM source if not already present
-    - Enables dynamic path resolution for BULK INSERT operations
-    - Supports modular, maintainable ETL pipeline aligned with medallion architecture
-
-Table Schema:
-    dbo.etl_config (
-        config_key     NVARCHAR(100) PRIMARY KEY,
-        config_value   NVARCHAR(200)
-    )
-
-Usage:
-    - Retrieve config values in ETL scripts using:
-        SELECT config_value FROM dbo.etl_config WHERE config_key = 'base_path_crm';
-
-    - To add new paths for other sources or layers:
-        IF NOT EXISTS (
-            SELECT 1 FROM dbo.etl_config WHERE config_key = 'base_path_example'
-        )
-        BEGIN
-            INSERT INTO dbo.etl_config (config_key, config_value)
-            VALUES (
-                'base_path_example',
-                'C:\path\to\example\source\'
-            );
-        END;
-
-    - Recommended keys:
-        'base_path_crm'      → CRM source folder
-        'base_path_erp'      → ERP source folder
-        'silver_load_mode'   → e.g. 'truncate_insert'
-        'gold_model_type'    → e.g. 'star_schema'
-
-Notes:
-    - This script is idempotent and safe to re-run
-    - Use MERGE for upsert logic if config values may change
-    - Consider adding metadata columns (e.g. last_updated, description) for auditability
-
-
-To show Table Contents, run the following:
-SELECT * FROM dbo.etl_config
-ORDER BY config_key;
-
-To drop table, highlight and run the following:
-DROP TABLE IF EXISTS dbo.etl_config;
+- Uses public.etl_config
+- Uses standard Postgres types and IF NOT EXISTS idioms
+- Inserts use INSERT ... SELECT ... WHERE NOT EXISTS for idempotency
 */
+CREATE SCHEMA IF NOT EXISTS public;
 
--- Create config table if it doesn't exist
-IF NOT EXISTS (
-    SELECT 1
-    FROM sys.tables
-    WHERE name = 'etl_config'
-      AND schema_id = SCHEMA_ID('dbo')
-)
-BEGIN
-    CREATE TABLE dbo.etl_config (
-        config_key   NVARCHAR(100) PRIMARY KEY,
-        config_value NVARCHAR(200)
-    );
-END;
-GO
+CREATE TABLE IF NOT EXISTS public.etl_config (
+    config_key   VARCHAR(100) PRIMARY KEY,
+    config_value VARCHAR(200)
+);
 
 -- Insert CRM base path if not already present
-IF NOT EXISTS (
-    SELECT 1
-    FROM dbo.etl_config
-    WHERE config_key = 'base_path_crm'
-)
-BEGIN
-    INSERT INTO dbo.etl_config (config_key, config_value)
-    VALUES (
-        'base_path_crm',
-        'C:\Users\Laurent\Studies\sql-ultimate-course\Udemy-SQL-Data-Warehouse-Project\datasets\crm\'
-    );
-END;
-GO
+INSERT INTO public.etl_config (config_key, config_value)
+SELECT 'base_path_crm', 'C:/Users/Laurent/Studies/sql-ultimate-course/Udemy-SQL-Data-Warehouse-Project/datasets/crm/'
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.etl_config WHERE config_key = 'base_path_crm'
+);
 
 -- Insert ERP base path if not already present
-IF NOT EXISTS (
-    SELECT 1
-    FROM dbo.etl_config
-    WHERE config_key = 'base_path_erp'
-)
-BEGIN
-    INSERT INTO dbo.etl_config (config_key, config_value)
-    VALUES (
-        'base_path_erp',
-        'C:\Users\Laurent\Studies\sql-ultimate-course\Udemy-SQL-Data-Warehouse-Project\datasets\erp\'
-    );
-END;
+INSERT INTO public.etl_config (config_key, config_value)
+SELECT 'base_path_erp', 'C:/Users/Laurent/Studies/sql-ultimate-course/Udemy-SQL-Data-Warehouse-Project/datasets/erp/'
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.etl_config WHERE config_key = 'base_path_erp'
+);
+
+-- To show Table Contents:
+-- SELECT * FROM public.etl_config ORDER BY config_key;
+-- To drop table, highlight and run the following:
+-- DROP TABLE IF EXISTS public.etl_config;
