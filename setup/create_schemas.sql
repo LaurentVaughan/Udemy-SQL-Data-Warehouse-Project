@@ -8,7 +8,7 @@ Purpose:
   - silver  (cleansed & conformed)
   - gold    (analytics & presentation)
 
-How to run:
+Usage:
   - Connect to `sql_retail_analytics_warehouse` in VS Code.
   - Execute this script.
 
