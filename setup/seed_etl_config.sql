@@ -48,6 +48,9 @@ Usage patterns & checks
 -- Ensure target schema exists (harmless if already present)
 CREATE SCHEMA IF NOT EXISTS public;
 
+-- Ensure we run with expected search_path so any future objects are created in bronze when intended
+SET search_path = public, bronze;
+
 -- Create the config table (idempotent)
 CREATE TABLE IF NOT EXISTS public.etl_config (
     config_key   VARCHAR(100) PRIMARY KEY,
