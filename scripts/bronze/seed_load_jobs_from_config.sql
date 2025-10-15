@@ -148,5 +148,3 @@ SELECT
     load_order
 FROM bronze.load_jobs
 ORDER BY load_order;
-
-
