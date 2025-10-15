@@ -1,6 +1,12 @@
 {
     "cSpell.words": [
+        "cust",
+        "drilldowns",
         "Mehta",
+        "pgcrypto",
+        "plpgsql",
+        "regclass",
+        "SQLERRM",
         "userbyid",
         "Verhoff"
     ]
