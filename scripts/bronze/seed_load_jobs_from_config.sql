@@ -1,7 +1,7 @@
 /*
-=========================================
-Bronze Loader: Procedure & Jobs Registry
-=========================================
+===========================
+Seed Load Jobs from Config
+===========================
 Purpose:
 ---------
 Provide a robust, data-driven loader for Bronze tables that:
