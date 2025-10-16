@@ -44,19 +44,6 @@ psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -c `
 # Expect: no rows returned.
 
 # 5) Now run this SQL file (in VS Code, pgAdmin, or psql) to recreate the database.
-
-Verification:
--------------
-1) To confirm the new database exists:
-SELECT
-  d.datname                                  AS database_name,
-  pg_catalog.pg_get_userbyid(d.datdba)       AS database_owner,
-  pg_catalog.pg_encoding_to_char(d.encoding) AS database_encoding,
-  d.datcollate                               AS database_collation,
-  d.datctype                                 AS database_ctype
-FROM pg_catalog.pg_database AS d
-WHERE d.datname = 'sql_retail_analytics_warehouse';
--- Expect: one row; encoding='UTF8', collation='en_GB.UTF-8', ctype='en_GB.UTF-8'.
 */
 
 -- Create a new clean database
@@ -78,3 +65,19 @@ SELECT
   d.datctype                                 AS database_ctype
 FROM pg_catalog.pg_database AS d
 WHERE d.datname = 'sql_retail_analytics_warehouse';
+
+/*
+=================
+Testing Queries:
+=================
+1) To confirm the new database exists:
+SELECT
+  d.datname                                  AS database_name,
+  pg_catalog.pg_get_userbyid(d.datdba)       AS database_owner,
+  pg_catalog.pg_encoding_to_char(d.encoding) AS database_encoding,
+  d.datcollate                               AS database_collation,
+  d.datctype                                 AS database_ctype
+FROM pg_catalog.pg_database AS d
+WHERE d.datname = 'sql_retail_analytics_warehouse';
+-- Expect: one row; encoding='UTF8', collation='en_GB.UTF-8', ctype='en_GB.UTF-8'.
+*/
