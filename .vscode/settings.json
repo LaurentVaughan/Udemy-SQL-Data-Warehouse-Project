@@ -5,6 +5,7 @@
         "Mehta",
         "pgcrypto",
         "plpgsql",
+        "proname",
         "regclass",
         "SQLERRM",
         "userbyid",
