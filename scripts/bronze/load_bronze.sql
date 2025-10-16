@@ -2,9 +2,10 @@
 ========================================
 Bronze Loader Procedure & Jobs Registry
 ========================================
+
 Purpose:
 ---------
-Provide a robust, data-driven loader for Bronze tables that:
+- Provide a robust, data-driven loader for Bronze tables that:
   - TRUNCATEs targets for clean, idempotent reloads.
   - COPY loads CSVs from server-visible file paths.
   - Logs every step (timings, rows, messages) into bronze.load_log for auditability.
@@ -13,31 +14,35 @@ Parameters:
 ------------
 - None (the procedure reads from the registry table bronze.load_jobs).
 
+Design choices & idempotency:
+----------------------------
+- Objects are created IF NOT EXISTS where appropriate (extensions, tables, indexes).
+- The loader records per-step status in `bronze.load_log` and continues on per-table errors so a single failing file doesn't abort the batch.
+- COPY is executed server-side; file paths must be accessible to the PostgreSQL server process.
+
 Usage:
---------
-Pre-requisites:
-- Run bronze/ddl_bronze_log.sql (creates the logging table).
-- Ensure Bronze data tables already exist.
+-------
+1) Prerequisites:
+   - Run `bronze/ddl_bronze_log.sql` to create the logging table and indexes.
+   - Ensure Bronze tables exist (e.g., via `bronze/ddl_bronze_tables.sql`).
+2) Install and register the loader:
+   - psql -d <db> -f bronze/load_bronze.sql
+3) Run the loader:
+   - CALL bronze.load_bronze();
 
-Install jobs registry + loader:
-- psql -f bronze/load_bronze.sql
+Security & operational notes:
+-----------------------------
+- COPY reads files from the database server host. Use server-accessible paths or use psql's `\copy` from a client when necessary.
+- If targets have FK/identity constraints, consider `TRUNCATE ... RESTART IDENTITY CASCADE` (adjust procedure accordingly).
 
-Populate the jobs registry with table → file mappings:
-- See the "Optional: Seeding examples" section at the bottom of this file
-  (commented template INSERTs). Edit paths and uncomment to run once.
+Verification (quick checks):
+---------------------------
+- Confirm procedure exists:
+SELECT
+  proname
+FROM pg_proc
+WHERE proname = 'load_bronze';
 
-Execute the loader:
-- CALL bronze.load_bronze();
-
-Security & Ops Notes:
-----------------------
-- COPY reads files from the *database server* host. Ensure paths are readable by the postgres OS user
-  (or use a shared mount). If you must load from a client machine, use \copy in psql or stage files first.
-- For FK-heavy schemas or identity columns, you may prefer:
-  - TRUNCATE TABLE %I.%I RESTART IDENTITY CASCADE (update the TRUNCATE EXECUTE line if needed).
-
-Optional: Ad-hoc operational queries (monitoring & debugging):
---------------------------------------------------------------
 - Summarize recent runs - Last N:(duration, total rows, any errors)
   SELECT run_id,
   MIN(started_at) AS started_at,
@@ -71,11 +76,6 @@ Optional: Ad-hoc operational queries (monitoring & debugging):
   USING (run_id)
   WHERE l.phase = 'COPY'
   ORDER BY l.table_name;
-
-Note:
-------
-- `pgcrypto` functions live in `public` by default; `public` remains second in `search_path`
-  so `gen_random_uuid()` resolves without qualifying.
 */
 
 SET search_path = bronze, public;

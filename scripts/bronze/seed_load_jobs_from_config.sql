@@ -44,12 +44,110 @@ Optional (included at end of file, commented):
   - Recent runs summary (duration, rows, error flag).
   - Latest run per-table results (rows_loaded, duration, message).
 
-Verification (post-run quick checks):
--------------------------------------
-- SHOW search_path;                                   -- expect "bronze, public"
-- SELECT COUNT(*) FROM bronze.load_jobs;              -- jobs present
-- CALL bronze.load_bronze();                          -- then inspect bronze.load_log (START → TRUNCATE/COPY → FINISH)
-- Compare a target table COUNT(*) to its rows_loaded in the latest COPY log.
+Verification (post‑run quick checks):
+----------------------------------
+1) Config preflight (must exist and be non‑NULL)
+SELECT
+  SUM((config_key='base_path_crm' AND config_value IS NOT NULL)::int) AS has_base_path_crm,
+  SUM((config_key='base_path_erp' AND config_value IS NOT NULL)::int) AS has_base_path_erp
+FROM public.etl_config
+WHERE config_key
+   IN ('base_path_crm','base_path_erp');
+-- Expect: has_base_path_crm = true AND has_base_path_erp = true (1).
+
+2) Seeding idempotency (running this script twice should not add rows)
+WITH before_ct AS (
+    SELECT
+        COUNT(*) AS n
+    FROM bronze.load_jobs)
+SELECT
+  (SELECT n FROM before_ct)                AS count_before,
+  (SELECT COUNT(*) FROM bronze.load_jobs)  AS count_after,
+  (SELECT COUNT(*) FROM bronze.load_jobs) - (SELECT n FROM before_ct) AS delta
+-- Expect delta = 0 on the second run.
+
+3) Expected jobs exist with non‑NULL paths and enabled flag
+SELECT
+    table_name,
+    file_path,
+    is_enabled,
+    load_order
+FROM bronze.load_jobs
+WHERE is_enabled
+  AND (file_path IS NULL OR file_path='')
+ORDER BY load_order;
+-- Expect: zero rows (all enabled jobs must have non‑empty file_path).
+
+4) No duplicate table entries (enforced by unique index)
+SELECT
+    table_name,
+    COUNT(*) AS c
+FROM bronze.load_jobs
+GROUP BY table_name
+HAVING COUNT(*) > 1;
+-- Expect: zero rows.
+
+5) Inspect the latest run:
+WITH last_run AS (
+  SELECT run_id
+  FROM bronze.load_log
+  WHERE phase = 'START'
+  ORDER BY started_at DESC
+  LIMIT 1
+)
+SELECT
+    phase,
+    status,
+    COUNT(*) AS events
+FROM bronze.load_log
+WHERE run_id = (SELECT run_id FROM last_run)
+GROUP BY phase, status
+ORDER BY phase;
+-- Expect: At least phases START, TRUNCATE, COPY, FINISH with status 'OK' for successful tables.
+
+6) Identify which tables failed and why
+WITH last_run AS (
+  SELECT run_id
+  FROM bronze.load_log
+  WHERE phase = 'START'
+  ORDER BY started_at DESC
+  LIMIT 1
+)
+SELECT
+  table_name,
+  message,       -- error detail
+  rows_loaded,
+  started_at,
+  finished_at
+FROM bronze.load_log
+WHERE run_id = (SELECT run_id FROM last_run)
+  AND phase = 'COPY'
+  AND status = 'ERROR'
+ORDER BY finished_at DESC;
+-- Expect: Any failed rows will have an error message.
+
+7) See the successful tables and their row counts
+WITH last_run AS (
+  SELECT run_id
+  FROM bronze.load_log
+  WHERE phase = 'START'
+  ORDER BY started_at DESC
+  LIMIT 1
+),
+last_copy_ok AS (
+  SELECT table_name, MAX(finished_at) AS last_copy_at
+  FROM bronze.load_log
+  WHERE run_id = (SELECT run_id FROM last_run)
+    AND phase = 'COPY'
+    AND status = 'OK'
+  GROUP BY table_name
+)
+SELECT l.table_name, l.rows_loaded, l.finished_at
+FROM bronze.load_log l
+JOIN last_copy_ok c
+  ON l.table_name = c.table_name AND l.finished_at = c.last_copy_at
+ORDER BY l.table_name;
+-- Expect: One row per successfully loaded table with rows_loaded and timestamp.
 
 Dependencies:
 --------------
@@ -121,20 +219,20 @@ SELECT * FROM (
     -------------
     UNION ALL
     SELECT
-        'bronze.erp_cust_az12' AS table_name,
-        cfg.base_path_erp || 'CUST_AZ12.csv' AS file_path,
+        'bronze.erp_customer_profiles' AS table_name,
+        cfg.base_path_erp || 'customer_profiles.csv' AS file_path,
         TRUE, 40
     FROM cfg
     UNION ALL
     SELECT
-        'bronze.erp_loc_a101' AS table_name,
-        cfg.base_path_erp || 'LOC_A101.csv' AS file_path,
+        'bronze.erp_location_hierarchy' AS table_name,
+        cfg.base_path_erp || 'location_hierarchy.csv' AS file_path,
         TRUE, 50
     FROM cfg
     UNION ALL
     SELECT
-        'bronze.erp_px_cat_g1v2' AS table_name,
-        cfg.base_path_erp || 'PX_CAT_G1V2.csv' AS file_path,
+        'bronze.erp_product_categories' AS table_name,
+        cfg.base_path_erp || 'product_categories.csv' AS file_path,
         TRUE, 60
     FROM cfg
 ) t

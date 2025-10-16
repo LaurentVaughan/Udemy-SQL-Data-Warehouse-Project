@@ -25,12 +25,40 @@ Notes:
 ------
 - The script sets `search_path = public, bronze` so unqualified objects land in `public`.
 - Ensure the provided paths end with a trailing slash; they must be reachable by the DB server if used for server-side COPY.
+*/
 
-Verification:
---------------
-0) Confirm search path sanity
-SHOW search_path;   -- expect: "public" (or "public, pg_catalog")
+-- Ensure target schema exists (harmless if already present)
+CREATE SCHEMA IF NOT EXISTS public;
 
+-- Resolve unqualified names into PUBLIC first (then BRONZE)
+SET search_path = public, bronze;
+
+-- Create the config table (idempotent)
+CREATE TABLE IF NOT EXISTS public.etl_config (
+    config_key   VARCHAR(100) PRIMARY KEY,
+    config_value VARCHAR(200) NOT NULL
+);
+
+-- Seed defaults (idempotent: DO NOTHING on key conflict)
+INSERT INTO public.etl_config (config_key, config_value)
+VALUES
+  ('base_path_crm', 'C:/Users/Laurent/Studies/sql-ultimate-course/Udemy-SQL-Data-Warehouse-Project/datasets/crm/'),
+  ('base_path_erp', 'C:/Users/Laurent/Studies/sql-ultimate-course/Udemy-SQL-Data-Warehouse-Project/datasets/erp/')
+ON CONFLICT (config_key) DO NOTHING;
+
+-- Optional: quick confirmation output
+SELECT
+    config_key,
+    config_value
+FROM public.etl_config
+WHERE config_key
+   IN ('base_path_crm','base_path_erp')
+ORDER BY config_key;
+
+/*
+=================
+Testing Queries:
+=================
 1) Verify table existence and structure
 SELECT
   table_schema,
@@ -81,31 +109,3 @@ SELECT
 FROM cfg;
 -- Expect: both non-NULL and valid filesystem paths
 */
-
--- Ensure target schema exists (harmless if already present)
-CREATE SCHEMA IF NOT EXISTS public;
-
--- Resolve unqualified names into PUBLIC first (then BRONZE)
-SET search_path = public, bronze;
-
--- Create the config table (idempotent)
-CREATE TABLE IF NOT EXISTS public.etl_config (
-    config_key   VARCHAR(100) PRIMARY KEY,
-    config_value VARCHAR(200) NOT NULL
-);
-
--- Seed defaults (idempotent: DO NOTHING on key conflict)
-INSERT INTO public.etl_config (config_key, config_value)
-VALUES
-  ('base_path_crm', 'C:/Users/Laurent/Studies/sql-ultimate-course/Udemy-SQL-Data-Warehouse-Project/datasets/crm/'),
-  ('base_path_erp', 'C:/Users/Laurent/Studies/sql-ultimate-course/Udemy-SQL-Data-Warehouse-Project/datasets/erp/')
-ON CONFLICT (config_key) DO NOTHING;
-
--- Optional: quick confirmation output
-SELECT
-    config_key,
-    config_value
-FROM public.etl_config
-WHERE config_key
-   IN ('base_path_crm','base_path_erp')
-ORDER BY config_key;

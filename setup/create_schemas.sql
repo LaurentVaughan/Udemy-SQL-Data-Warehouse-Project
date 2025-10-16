@@ -21,9 +21,17 @@ Design & idempotency:
 Usage:
 ------
 - Connect to the target database (e.g., `sql_retail_analytics_warehouse`) and execute this script.
+*/
 
-Verification:
--------------
+-- Create schemas if they do not exist
+CREATE SCHEMA IF NOT EXISTS bronze AUTHORIZATION CURRENT_USER;
+CREATE SCHEMA IF NOT EXISTS silver AUTHORIZATION CURRENT_USER;
+CREATE SCHEMA IF NOT EXISTS gold AUTHORIZATION CURRENT_USER;
+
+/*
+=================
+Testing Queries:
+=================
 1) Verify schema creation
 SELECT
   current_database()                     AS current_database_name,
@@ -32,9 +40,5 @@ SELECT
 FROM pg_catalog.pg_namespace AS n
 WHERE n.nspname IN ('bronze', 'silver', 'gold')
 ORDER BY schema_name;
+-- Expect: three rows (one per schema) with the current database name, schema name, and user as owner.
 */
-
--- Create schemas if they do not exist
-CREATE SCHEMA IF NOT EXISTS bronze AUTHORIZATION CURRENT_USER;
-CREATE SCHEMA IF NOT EXISTS silver AUTHORIZATION CURRENT_USER;
-CREATE SCHEMA IF NOT EXISTS gold AUTHORIZATION CURRENT_USER;

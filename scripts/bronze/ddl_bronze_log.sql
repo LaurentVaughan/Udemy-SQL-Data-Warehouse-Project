@@ -2,11 +2,11 @@
 ==========================
 bronze/ddl_bronze_log.sql
 ==========================
+
 Purpose:
 ---------
 - Create the schema and the append-only log table that records each Bronze batch run.
 - Provide constraints and indexes for fast observability and reliable downstream reporting.
-
 - Create the Bronze-layer load logging objects (schema + append-only log table) and
 - Add constraints/indexes for fast observability and reliable downstream reporting.
 - Every loader execution writes structured rows:
@@ -35,7 +35,7 @@ psql (terminal)
   psql -d sql_retail_analytics_warehouse -f bronze/ddl_bronze_log.sql
 
 Notes:
--------------------
+-------
 - CHECK constraints are created NOT VALID to avoid blocking on historical rows; VALIDATE later if desired:
 --   ALTER TABLE bronze.load_log VALIDATE CONSTRAINT load_log_status_chk;
 --   ALTER TABLE bronze.load_log VALIDATE CONSTRAINT load_log_phase_chk;
