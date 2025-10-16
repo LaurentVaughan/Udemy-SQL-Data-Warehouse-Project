@@ -1,44 +1,35 @@
 /*
-================
-recreate_db.sql
-================
+======================
+setup/recreate_db.sql
+======================
+
 Purpose:
-  Drops and recreates the main Data Warehouse database "SQL-Retail-Analytics-Warehouse".
+---------
+- Drop (if exists) and recreate the main data warehouse database `sql_retail_analytics_warehouse` with a clean template and predictable locale/encoding.
 
-How to run:
-  - Connect to the `postgres` database (NOT the target DB) in VS Code or psql.
-  - Execute this script.
+Parameters:
+-----------
+- None. This script must be executed connected to a database other than the target (typically `postgres`).
 
-Steps:
-  1. Drops any active connections (via FORCE).
-  2. Creates a fresh UTF-8, en_GB-collated database.
-  3. Confirms successful creation.
+Design & safety notes:
+----------------------
+- Uses `DROP DATABASE IF EXISTS ... WITH (FORCE)` to remove active connections before recreation. This is destructive to existing data.
+- Intended for development/test environments. Review before running in production.
 
-=======
 Usage:
-=======
-1. Check the current database:
-   SELECT current_database();
+------
+1) Connect to the `postgres` database (not the target database).
+2) Run the script via VS Code or psql:
+   psql -d postgres -f setup/recreate_db.sql
 
-2. Ensure you have CONNECT privilege
-    GRANT CONNECT ON DATABASE sql_retail_analytics_warehouse TO postgres;
-
-3. Verify VS Code is on the same server as PGAdmin
-    SELECT
-    inet_server_addr()   AS server_ip,
-    current_setting('port') AS server_port,
-    version()            AS server_version,
-    current_database()   AS current_db,
-    current_user         AS current_user_name,
-    current_setting('data_directory') AS data_dir;
-
-4. Confirm the database exists:
-    SELECT datname, datallowconn, datacl
-    FROM pg_database
-    WHERE datname = 'sql_retail_analytics_warehouse';
-
-5. Execute from VS Code terminal or psql CLI:
-    psql -d postgres -f setup/utils/recreate_db.sql
+Verification:
+-------------
+- To confirm the new database exists, run:
+  SELECT
+    datname,
+    datdba
+  FROM pg_database
+  WHERE datname = 'sql_retail_analytics_warehouse';
 */
 
 -- Step 1: Drop the existing database (if any)
