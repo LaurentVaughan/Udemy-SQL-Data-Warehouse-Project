@@ -1,6 +1,6 @@
 /*
 ==========================
-setup/seed_etl_config.sql
+setup/seed/seed_01_etl_config.sql
 ==========================
 
 Purpose:
@@ -19,7 +19,7 @@ Design & idempotency:
 Usage:
 ------
 - Execute against your target warehouse database (e.g., `sql_retail_analytics_warehouse`):
-  psql -d <db> -f setup/seed_etl_config.sql
+  psql -d <db> -f setup/seed/seed_01_etl_config.sql
 
 Notes:
 ------
@@ -32,6 +32,20 @@ CREATE SCHEMA IF NOT EXISTS public;
 
 -- Resolve unqualified names into PUBLIC first (then BRONZE)
 SET search_path = public, bronze;
+
+/*
+Fail-fast / informative notice: if the config table already exists, inform the operator.
+This helps avoid accidental surprises when re-running the script and documents intent.
+*/
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'etl_config'
+  ) THEN
+    RAISE NOTICE 'Notice: public.etl_config already exists - the script will only seed missing keys.';
+  END IF;
+END$$;
 
 -- Create the config table (idempotent)
 CREATE TABLE IF NOT EXISTS public.etl_config (
