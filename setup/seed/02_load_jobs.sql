@@ -1,6 +1,6 @@
 /*
 ===========================
-setup/seed/seed_02_load_jobs.sql
+setup/seed/02_load_jobs.sql
 ===========================
 
 Purpose:
@@ -15,7 +15,7 @@ Parameters:
 Usage:
 ------
 - Run after `seed_01_etl_config.sql`.
-  psql -d <db> -f setup/seed/seed_02_load_jobs.sql
+  psql -d <db> -f setup/seed/02_load_jobs.sql
 
 Notes:
 ------

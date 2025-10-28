@@ -1,6 +1,6 @@
 /*
 ==========================
-setup/seed/seed_01_etl_config.sql
+setup/seed/01_etl_config.sql
 ==========================
 
 Purpose:
@@ -19,7 +19,7 @@ Design & idempotency:
 Usage:
 ------
 - Execute against your target warehouse database (e.g., `sql_retail_analytics_warehouse`):
-  psql -d <db> -f setup/seed/seed_01_etl_config.sql
+  psql -d <db> -f setup/seed/01_etl_config.sql
 
 Notes:
 ------
@@ -109,17 +109,4 @@ SELECT
   (SELECT COUNT(*) FROM public.etl_config) AS count_after,
   (SELECT COUNT(*) FROM public.etl_config) - (SELECT n FROM before_ct) AS delta;
 -- Expect: delta = 0 after a second run
-
-5) Downstream compatibility to check that seed_load_jobs_from_config.sql can read base paths correctly
-WITH cfg AS (
-  SELECT
-    MAX(CASE WHEN config_key='base_path_crm' THEN config_value END) AS base_path_crm,
-    MAX(CASE WHEN config_key='base_path_erp' THEN config_value END) AS base_path_erp
-  FROM public.etl_config
-)
-SELECT
-  base_path_crm,
-  base_path_erp
-FROM cfg;
--- Expect: both non-NULL and valid filesystem paths
 */

@@ -41,27 +41,7 @@ Notes:
 --   ALTER TABLE bronze.load_log VALIDATE CONSTRAINT load_log_phase_chk;
 - Add/adjust indexes based on actual query patterns (e.g., by started_at range, run_id lookups).
 
-Verification (quick checks):
------------------------------
-- Table exists
-  SELECT
-    table_schema,
-    table_name
-  FROM information_schema.tables
-  WHERE table_schema='bronze'
-    AND table_name='load_log';
 
-- Recent runs (one per run_id)
-  SELECT
-    run_id,
-    MIN(started_at) AS started_at,
-    MAX(finished_at) AS finished_at,
-    SUM(rows_loaded) FILTER (WHERE phase='COPY') AS total_rows_loaded,
-    BOOL_OR(status='ERROR') AS had_errors
-  FROM bronze.load_log
-  GROUP BY run_id
-  ORDER BY started_at DESC
-  LIMIT 5;
 */
 
 -- Ensure schema exists
@@ -103,3 +83,30 @@ CREATE INDEX IF NOT EXISTS idx_load_log_rows_loaded ON bronze.load_log (rows_loa
 CREATE INDEX IF NOT EXISTS idx_load_log_started_at  ON bronze.load_log (started_at);      -- time-range queries
 CREATE INDEX IF NOT EXISTS idx_load_log_finished_at ON bronze.load_log (finished_at);     -- time-range queries
 CREATE INDEX IF NOT EXISTS idx_load_log_duration    ON bronze.load_log (duration_sec);    -- slow-step profiling
+
+/*
+=================
+Testing Queries:
+=================
+
+1) Check table exists
+  SELECT
+    table_schema,
+    table_name
+  FROM information_schema.tables
+  WHERE table_schema='bronze'
+    AND table_name='load_log';
+-- Expected: 1 row
+
+2) Inspect table structure
+  SELECT
+    run_id,
+    MIN(started_at) AS started_at,
+    MAX(finished_at) AS finished_at,
+    SUM(rows_loaded) FILTER (WHERE phase='COPY') AS total_rows_loaded,
+    BOOL_OR(status='ERROR') AS had_errors
+  FROM bronze.load_log
+  GROUP BY run_id
+  ORDER BY started_at DESC
+  LIMIT 5;
+-- Expected: Recent 5 runs with summary info

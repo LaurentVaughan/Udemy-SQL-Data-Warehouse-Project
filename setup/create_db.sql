@@ -27,23 +27,34 @@ Manual Pre-Step: Drop the old database (PowerShell)
 Run these commands in PowerShell before executing this SQL file.
 Adjust the password and version to your local installation as needed.
 
-# 1) Terminate any active connections to the target database
+1) Terminate any active connections to the target database
 psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -c `
 "SELECT pg_terminate_backend(pid)
    FROM pg_stat_activity
   WHERE datname = 'sql_retail_analytics_warehouse'
     AND pid <> pg_backend_pid();"
 
-# 3) Drop the database (requires PostgreSQL 13+ for WITH (FORCE))
+2) Drop the database (requires PostgreSQL 13+ for WITH (FORCE))
 psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -c `
 "DROP DATABASE IF EXISTS sql_retail_analytics_warehouse WITH (FORCE);"
 
-# 4) Optional: Verify drop success
+3) Optional: Verify drop success
 psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -c `
 "SELECT datname FROM pg_database WHERE datname = 'sql_retail_analytics_warehouse';"
 # Expect: no rows returned.
 
-# 5) Now run this SQL file (in VS Code, pgAdmin, or psql) to recreate the database.
+4) Recreate Database:
+- Run this SQL file to recreate the database within a new postgres owner server.
+- Create new database connection:
+  - Server: localhost
+  - User: postgres
+  - Password: <your_password>
+  - Database Name: sql_retail_analytics_warehouse
+  - Connection Name: Postgres 18
+- Ensure connection to new server instance.
+Test connection and save if successful.
+
+5) Run the `setup/create_schemas.sql` script to create the standard schemas within the new server instance.
 */
 
 -- Create a new clean database

@@ -35,40 +35,6 @@ Notes:
 -------
 - Adjust data types and lengths based on actual source data characteristics.
 - Add constraints and indexes later based on usage patterns and data quality needs.
-
-Validation Queries:
---------------------
-1) Confirm DB + search path
-SELECT
-  current_database() AS db,
-  current_user AS user;
-SHOW search_path;
-
-2) List all bronze tables
-SELECT
-  table_schema,
-  table_name
-FROM information_schema.tables
-WHERE table_schema = 'bronze'
-ORDER BY table_name;
-
-3) Inspect columns (example: erp_px_cat_g1v2)
-SELECT
-  column_name,
-  data_type
-FROM information_schema.columns
-WHERE table_schema = 'bronze'
-  AND table_name = 'erp_px_cat_g1v2'
-ORDER BY ordinal_position;
-
-4) Quick existence check (NULL means missing)
-SELECT
-  to_regclass('bronze.crm_customer_info')   AS crm_customer_info,
-  to_regclass('bronze.crm_product_info')    AS crm_product_info,
-  to_regclass('bronze.crm_sales_details')   AS crm_sales_details,
-  to_regclass('bronze.erp_loc_a101')        AS erp_loc_a101,
-  to_regclass('bronze.erp_cust_az12')       AS erp_cust_az12,
-  to_regclass('bronze.erp_px_cat_g1v2')     AS erp_px_cat_g1v2;
 */
 
 -- CRM: Customer Info
@@ -138,3 +104,38 @@ CREATE TABLE bronze.erp_product_categories (
   subcategory VARCHAR(50),
   maintenance VARCHAR(50)
 );
+
+/*
+=================
+Testing Queries:
+=================
+
+1) List all bronze tables
+SELECT
+  table_schema,
+  table_name
+FROM information_schema.tables
+WHERE table_schema = 'bronze'
+ORDER BY table_name;
+-- Expect: 7 rows (6 data + 1 load_job + 1 load_log).
+
+2) Inspect columns (example: erp_product_categories)
+SELECT
+  column_name,
+  data_type
+FROM information_schema.columns
+WHERE table_schema = 'bronze'
+  AND table_name = 'erp_product_categories'
+ORDER BY ordinal_position;
+-- Expect: 4 columns (id, category, subcategory, maintenance).
+
+4) Quick existence check (NULL means missing)
+SELECT
+  to_regclass('bronze.crm_customer_info')      AS crm_customer_info,
+  to_regclass('bronze.crm_product_info')       AS crm_product_info,
+  to_regclass('bronze.crm_sales_details')      AS crm_sales_details,
+  to_regclass('bronze.erp_customer_profiles')  AS erp_customer_profiles,
+  to_regclass('bronze.erp_location_hierarchy') AS erp_location_hierarchy,
+  to_regclass('bronze.erp_product_categories') AS erp_product_categories;
+-- Expect: all non-NULL.
+*/

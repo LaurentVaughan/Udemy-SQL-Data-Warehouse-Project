@@ -34,48 +34,6 @@ Security & operational notes:
 -----------------------------
 - COPY reads files from the database server host. Use server-accessible paths or use psql's `\copy` from a client when necessary.
 - If targets have FK/identity constraints, consider `TRUNCATE ... RESTART IDENTITY CASCADE` (adjust procedure accordingly).
-
-Verification (quick checks):
----------------------------
-- Confirm procedure exists:
-SELECT
-  proname
-FROM pg_proc
-WHERE proname = 'load_bronze';
-
-- Summarize recent runs - Last N:(duration, total rows, any errors)
-  SELECT run_id,
-  MIN(started_at) AS started_at,
-  MAX(finished_at) AS finished_at,
-  MAX(duration_sec) AS duration_sec,
-  SUM(rows_loaded) FILTER (WHERE phase = 'COPY') AS total_rows_loaded,
-  BOOL_OR(status = 'ERROR') AS had_errors
-  FROM bronze.load_log
-  GROUP BY run_id
-  ORDER BY started_at DESC
-  LIMIT 5;
-
-- Inspect per-table results for the latest run (rows loaded, durations, messages)
-  WITH last_run AS (
-  SELECT
-    run_id
-  FROM bronze.load_log
-  WHERE phase IN ('START','FINISH')
-  ORDER BY started_at DESC
-  LIMIT 1
-  )
-  SELECT
-    l.table_name,
-    l.file_path,
-    l.status,
-    l.rows_loaded,
-    l.duration_sec,
-    l.message
-  FROM bronze.load_log l
-  JOIN last_run r
-  USING (run_id)
-  WHERE l.phase = 'COPY'
-  ORDER BY l.table_name;
 */
 
 SET search_path = bronze, public;
@@ -336,3 +294,57 @@ EXCEPTION WHEN OTHERS THEN
     RAISE;
 END;
 $$;
+
+-- Launch the loader (uncomment to run immediately after creating the procedure)
+CALL bronze.load_bronze();
+
+/*
+=================
+Testing Queries:
+=================
+1) Check table exists
+  SELECT
+    table_schema,
+    table_name
+  FROM information_schema.tables
+  WHERE table_schema='bronze'
+    AND table_name='load_log';
+-- Expected: 1 row
+
+2) Inspect table structure
+  SELECT
+    column_name,
+    data_type
+  FROM information_schema.columns
+  WHERE table_schema = 'bronze'
+    AND table_name = 'load_log'
+  ORDER BY ordinal_position;
+-- Expected: 10 columns (run_id, phase, table_name, file_path, status, rows_loaded, started_at, finished_at, duration_sec, message).
+
+3) Quick existence check (NULL means missing)
+  SELECT
+    to_regclass('bronze.load_log');
+-- Expected: 'bronze.load_log'
+
+4) Inspect recent runs
+  SELECT
+    run_id,
+    MIN(started_at) AS started_at,
+    MAX(finished_at) AS finished_at,
+    SUM(rows_loaded) FILTER (WHERE phase='COPY') AS total_rows_loaded,
+    BOOL_OR(status='ERROR') AS had_errors
+  FROM bronze.load_log
+  GROUP BY run_id
+  ORDER BY started_at DESC
+  LIMIT 5;
+-- Expected: Recent 5 runs with summary info.
+
+3) Config preflight (must exist and be non‑NULL)
+SELECT
+  SUM((config_key='base_path_crm' AND config_value IS NOT NULL)::int) AS has_base_path_crm,
+  SUM((config_key='base_path_erp' AND config_value IS NOT NULL)::int) AS has_base_path_erp
+FROM public.etl_config
+WHERE config_key
+   IN ('base_path_crm','base_path_erp');
+-- Expect: has_base_path_crm = true AND has_base_path_erp = true (1).
+*/
