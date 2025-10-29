@@ -79,7 +79,7 @@ Post-Creation Steps
 Testing
 -------
 Comprehensive test coverage available in:
-  tests/test_create_db.ipynb
+  tests/tests_setup/test_create_db.ipynb
 */
 
 -- Create a new clean database

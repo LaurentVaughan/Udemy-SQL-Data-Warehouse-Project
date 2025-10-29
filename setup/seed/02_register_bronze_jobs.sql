@@ -73,7 +73,7 @@ Path Convention:
 
 Testing:
 --------
-Comprehensive test suite: tests/test_02_register_bronze_jobs.ipynb
+Comprehensive test suite: tests/tests_setup/test_02_register_bronze_jobs.ipynb
 
 */
 

@@ -82,7 +82,7 @@ Prerequisites:
 
 Testing:
 --------
-→ tests/test_load_bronze.ipynb
+→ tests/tests_bronze/test_load_bronze.ipynb
   • Comprehensive validation of load procedure
   • Log structure verification
   • Error handling scenarios

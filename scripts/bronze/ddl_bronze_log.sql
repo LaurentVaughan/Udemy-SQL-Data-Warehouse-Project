@@ -47,7 +47,7 @@ Prerequisites:
 
 Testing:
 --------
-→ tests/test_ddl_bronze_log.ipynb
+→ tests/tests_bronze/test_ddl_bronze_log.ipynb
   • 27 tests across 7 suites
   • Table/schema existence, column definitions, all 9 indexes, CHECK constraints
   • Default values, sequences, integration tests with sample data

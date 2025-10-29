@@ -77,8 +77,8 @@ Run these scripts BEFORE executing setup.orchestrate_bronze():
 
 Testing:
 --------
-→ tests/test_orchestrate_bronze.ipynb (comprehensive validation)
-→ tests/test_02_register_bronze_jobs.ipynb (job registration tests)
+→ tests/tests_setup/test_orchestrate_bronze.ipynb (comprehensive validation)
+→ tests/tests_setup/test_02_register_bronze_jobs.ipynb (job registration tests)
 
 */
 

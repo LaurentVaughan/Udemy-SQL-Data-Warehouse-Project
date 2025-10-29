@@ -52,7 +52,7 @@ Required:
 
 Testing:
 --------
-Comprehensive test suite: tests/test_ddl_bronze_tables.ipynb
+Comprehensive test suite: tests/tests_bronze/test_ddl_bronze_tables.ipynb
 
 */
 

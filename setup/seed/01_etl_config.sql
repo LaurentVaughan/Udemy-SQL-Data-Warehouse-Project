@@ -48,7 +48,7 @@ Via VS Code PostgreSQL extension:
 Testing
 -------
 Comprehensive test coverage available in:
-  tests/test_01_etl_config.ipynb
+  tests/tests_setup/test_01_etl_config.ipynb
 */
 
 -- Ensure target schema exists (harmless if already present)

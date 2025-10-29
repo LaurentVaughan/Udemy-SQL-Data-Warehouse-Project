@@ -107,7 +107,7 @@ Next steps after running this script:
 
 Testing:
 --------
-For comprehensive testing, use: tests/test_create_schemas.ipynb
+For comprehensive testing, use: tests/tests_setup/test_create_schemas.ipynb
 
 Test coverage includes:
 - Schema existence validation
