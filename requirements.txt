@@ -1,0 +1,45 @@
+# SQL Data Warehouse Project - Python Dependencies
+# ================================================
+# Test suite dependencies for Bronze layer validation
+#
+# Installation:
+#   pip install -r requirements.txt
+#
+# Purpose:
+#   Enables comprehensive testing of PostgreSQL data warehouse setup
+#   via Jupyter notebooks with pytest integration
+
+# Database Connectivity
+# ---------------------
+psycopg2-binary>=2.9.0,<3.0.0     # PostgreSQL adapter for Python
+                                  # Note: Using psycopg2-binary (includes C libs)
+                                  # For production, consider psycopg2 with system libs
+
+# Testing Framework
+# -----------------
+pytest>=7.0.0,<9.0.0              # Core testing framework
+ipytest>=0.13.0,<1.0.0            # Pytest integration for Jupyter notebooks
+nbmake>=1.3.0,<2.0.0              # Pytest plugin to run notebooks as tests
+
+# Data Analysis & Manipulation
+# -----------------------------
+pandas>=2.0.0,<3.0.0              # Data structures for test validation
+                                  # Used for tabular result inspection
+
+# Jupyter Notebook Support
+# -------------------------
+jupyter>=1.0.0,<2.0.0             # Jupyter notebook environment
+notebook>=7.0.0,<8.0.0            # Jupyter notebook interface
+ipykernel>=6.0.0,<7.0.0           # IPython kernel for Jupyter
+
+# Optional: Enhanced Notebook Experience
+# ---------------------------------------
+# jupyterlab>=4.0.0,<5.0.0        # Modern notebook interface (alternative to notebook)
+# matplotlib>=3.7.0,<4.0.0        # Visualization (if adding charts)
+# seaborn>=0.12.0,<1.0.0          # Statistical visualizations (if needed)
+
+# Development Tools (Optional)
+# -----------------------------
+# black>=23.0.0,<25.0.0           # Code formatter
+# pylint>=2.17.0,<4.0.0           # Code linter
+# autopep8>=2.0.0,<3.0.0          # PEP 8 auto-formatter
