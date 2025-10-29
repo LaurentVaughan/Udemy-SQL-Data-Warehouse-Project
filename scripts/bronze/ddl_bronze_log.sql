@@ -1,51 +1,65 @@
 /*
-==========================
-bronze/ddl_bronze_log.sql
-==========================
+==================================
+scripts/bronze/ddl_bronze_log.sql
+==================================
+
+Overview:
+---------
+Creates the bronze-layer audit logging infrastructure for ETL observability.
 
 Purpose:
----------
-- Create the schema and the append-only log table that records each Bronze batch run.
-- Provide constraints and indexes for fast observability and reliable downstream reporting.
-- Create the Bronze-layer load logging objects (schema + append-only log table) and
-- Add constraints/indexes for fast observability and reliable downstream reporting.
-- Every loader execution writes structured rows:
-    - batch START/FINISH plus per-table TRUNCATE/COPY steps, errors.
+--------
+Creates bronze.load_log table with supporting indexes and constraints to track
+all ETL operations. Every load execution writes structured rows documenting
+batch events, table operations, and error details.
 
-Parameters:
-------------
-- None.
+What This Creates:
+------------------
+- bronze schema (if not exists)
+- pgcrypto extension (UUID generation)
+- bronze.load_log table (append-only audit log)
+- 9 indexes (run_id, phase, table_name, file_path, status, rows_loaded, started_at, finished_at, duration_sec)
+- 2 CHECK constraints (status, phase)
 
-Design choices:
-----------------
-- Schema: bronze
-- Table:  bronze.load_log (TEXT over VARCHAR by design; length is unbounded and storage is identical)
+What Logs Are Captured:
+-----------------------
+- Batch START/FINISH events
+- Per-table TRUNCATE/COPY operations
+- Error details with SQLERRM messages
+- Duration and row counts
+
+Design Choices:
+---------------
+- TEXT over VARCHAR: unbounded length, identical storage
 - Phases: START | VALIDATION | TRUNCATE | COPY | SEPARATOR | FINISH | ERROR
-- Idempotent: all statements are IF NOT EXISTS / NOT VALID where appropriate
-- Indexes: support common queries for dashboards and investigations
-- Constraints: lightweight CHECK constraints on status and phase (NOT VALID so creation never blocks)
+- Idempotent: all statements use IF NOT EXISTS / NOT VALID
+- CHECK constraints: NOT VALID on creation (never blocks, validate later if needed)
 
-Usage:
--------
-VS Code (PostgreSQL extension)
-  1) Connect to target DB
-  2) Run this file
+Single Source of Truth:
+-----------------------
+This file is the authoritative definition for bronze.load_log structure.
+Do NOT modify the table schema elsewhere.
 
-psql (terminal)
-  psql -d sql_retail_analytics_warehouse -f bronze/ddl_bronze_log.sql
+Prerequisites:
+--------------
+- Database: sql_retail_analytics_warehouse must exist
+- Schema: bronze schema is created by this script
 
-Notes:
--------
-- CHECK constraints are created NOT VALID to avoid blocking on historical rows; VALIDATE later if desired:
---   ALTER TABLE bronze.load_log VALIDATE CONSTRAINT load_log_status_chk;
---   ALTER TABLE bronze.load_log VALIDATE CONSTRAINT load_log_phase_chk;
-- Add/adjust indexes based on actual query patterns (e.g., by started_at range, run_id lookups).
-
+Testing:
+--------
+→ tests/test_ddl_bronze_log.ipynb
+  • 27 tests across 7 suites
+  • Table/schema existence, column definitions, all 9 indexes, CHECK constraints
+  • Default values, sequences, integration tests with sample data
 
 */
 
 -- Ensure schema exists
 CREATE SCHEMA IF NOT EXISTS bronze;
+
+-- Provide a UUID generator used by load scripts. This uses pgcrypto's gen_random_uuid().
+-- Creating this extension requires appropriate privileges; it's safe to run IF NOT EXISTS.
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- Centralized structured logging for loads (TEXT by design)
 CREATE TABLE IF NOT EXISTS bronze.load_log (
@@ -83,30 +97,3 @@ CREATE INDEX IF NOT EXISTS idx_load_log_rows_loaded ON bronze.load_log (rows_loa
 CREATE INDEX IF NOT EXISTS idx_load_log_started_at  ON bronze.load_log (started_at);      -- time-range queries
 CREATE INDEX IF NOT EXISTS idx_load_log_finished_at ON bronze.load_log (finished_at);     -- time-range queries
 CREATE INDEX IF NOT EXISTS idx_load_log_duration    ON bronze.load_log (duration_sec);    -- slow-step profiling
-
-/*
-=================
-Testing Queries:
-=================
-
-1) Check table exists
-  SELECT
-    table_schema,
-    table_name
-  FROM information_schema.tables
-  WHERE table_schema='bronze'
-    AND table_name='load_log';
--- Expected: 1 row
-
-2) Inspect table structure
-  SELECT
-    run_id,
-    MIN(started_at) AS started_at,
-    MAX(finished_at) AS finished_at,
-    SUM(rows_loaded) FILTER (WHERE phase='COPY') AS total_rows_loaded,
-    BOOL_OR(status='ERROR') AS had_errors
-  FROM bronze.load_log
-  GROUP BY run_id
-  ORDER BY started_at DESC
-  LIMIT 5;
--- Expected: Recent 5 runs with summary info
