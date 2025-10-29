@@ -1,60 +1,85 @@
 /*
-======================
+=======================
 setup/create_db.sql
-======================
+=======================
 
-Purpose:
----------
-- Drop (if exists) and recreate the main data warehouse database `sql_retail_analytics_warehouse` with a clean template and predictable locale/encoding.
+Overview
+--------
+• Creates the sql_retail_analytics_warehouse database with clean template
+• Configures UTF-8 encoding with en_GB locale for predictable collation
+• Intended for initial database setup in development/test environments
 
-Parameters:
------------
-- None. This script must be executed connected to a database other than the target (typically `postgres`).
+Single Source of Truth
+-----------------------
+• This is the ONLY file that defines the warehouse database structure
+• Database name, encoding, and locale settings defined here exclusively
+• No other scripts attempt to create this database
 
-Design & safety notes:
+Prerequisites
+-------------
+• PostgreSQL 13+ installed (required for DROP DATABASE WITH FORCE)
+• Connection to 'postgres' database (NOT the target database)
+• Superuser or database creation privileges
+• No active connections to sql_retail_analytics_warehouse (script will show termination steps)
+
+Execution Context
+-----------------
+• Run BEFORE: setup/create_schemas.sql, setup/seed/01_etl_config.sql
+• Run AFTER: PostgreSQL installation and initial setup
+• Destructive: Drops existing database if present (development/test only)
+
+Database Configuration
 ----------------------
-- Uses `DROP DATABASE IF EXISTS ... WITH (FORCE)` to remove active connections before recreation. This is destructive to existing data.
-- Intended for development/test environments. Review before running in production.
+• Name: sql_retail_analytics_warehouse
+• Template: template0 (clean, no extra objects)
+• Encoding: UTF8 (universal character support)
+• Collation: en_GB.UTF-8 (British English sorting rules)
+• CType: en_GB.UTF-8 (British English character classification)
 
-Usage:
-------
-1) Connect to the `postgres` database (not the target database).
-2) Run the script via VS Code or psql:
-   psql -d postgres -f setup/recreate_db.sql
+Usage
+-----
+Via psql (recommended):
+  psql -U postgres -h localhost -d postgres -f setup/create_db.sql
 
-Manual Pre-Step: Drop the old database (PowerShell)
-----------------------------------------------------------------
-Run these commands in PowerShell before executing this SQL file.
-Adjust the password and version to your local installation as needed.
+Via VS Code PostgreSQL extension:
+  1. Connect to 'postgres' database
+  2. Execute this file
+  3. Create new connection to sql_retail_analytics_warehouse
 
-1) Terminate any active connections to the target database
-psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -c `
-"SELECT pg_terminate_backend(pid)
-   FROM pg_stat_activity
-  WHERE datname = 'sql_retail_analytics_warehouse'
-    AND pid <> pg_backend_pid();"
+Manual Pre-Steps (if database exists with active connections)
+--------------------------------------------------------------
+PowerShell commands to terminate connections and force drop:
 
-2) Drop the database (requires PostgreSQL 13+ for WITH (FORCE))
-psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -c `
-"DROP DATABASE IF EXISTS sql_retail_analytics_warehouse WITH (FORCE);"
+1) Terminate active connections:
+   psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -c `
+   "SELECT pg_terminate_backend(pid) FROM pg_stat_activity 
+    WHERE datname = 'sql_retail_analytics_warehouse' AND pid <> pg_backend_pid();"
 
-3) Optional: Verify drop success
-psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -c `
-"SELECT datname FROM pg_database WHERE datname = 'sql_retail_analytics_warehouse';"
-# Expect: no rows returned.
+2) Force drop database (PostgreSQL 13+):
+   psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -c `
+   "DROP DATABASE IF EXISTS sql_retail_analytics_warehouse WITH (FORCE);"
 
-4) Recreate Database:
-- Run this SQL file to recreate the database within a new postgres owner server.
-- Create new database connection:
-  - Server: localhost
-  - User: postgres
-  - Password: <your_password>
-  - Database Name: sql_retail_analytics_warehouse
-  - Connection Name: Postgres 18
-- Ensure connection to new server instance.
-Test connection and save if successful.
+3) Verify drop (expect no rows):
+   psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -c `
+   "SELECT datname FROM pg_database WHERE datname = 'sql_retail_analytics_warehouse';"
 
-5) Run the `setup/create_schemas.sql` script to create the standard schemas within the new server instance.
+Post-Creation Steps
+-------------------
+1. Create new database connection in VS Code/pgAdmin:
+   • Host: localhost
+   • User: postgres
+   • Database: sql_retail_analytics_warehouse
+   • Connection Name: sql_retail_analytics_warehouse
+
+2. Run schema creation:
+   \i setup/create_schemas.sql
+
+3. Proceed with setup sequence (see setup/seed/seed_all.sql for complete order)
+
+Testing
+-------
+Comprehensive test coverage available in:
+  tests/test_create_db.ipynb
 */
 
 -- Create a new clean database
@@ -76,19 +101,3 @@ SELECT
   d.datctype                                 AS database_ctype
 FROM pg_catalog.pg_database AS d
 WHERE d.datname = 'sql_retail_analytics_warehouse';
-
-/*
-=================
-Testing Queries:
-=================
-1) To confirm the new database exists:
-SELECT
-  d.datname                                  AS database_name,
-  pg_catalog.pg_get_userbyid(d.datdba)       AS database_owner,
-  pg_catalog.pg_encoding_to_char(d.encoding) AS database_encoding,
-  d.datcollate                               AS database_collation,
-  d.datctype                                 AS database_ctype
-FROM pg_catalog.pg_database AS d
-WHERE d.datname = 'sql_retail_analytics_warehouse';
--- Expect: one row; encoding='UTF8', collation='en_GB.UTF-8', ctype='en_GB.UTF-8'.
-*/
